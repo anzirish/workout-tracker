@@ -4,6 +4,8 @@
 
 Full-stack workout tracking application with user authentication, workout management, and streak tracking features.
 
+**Live Backend API:** https://workout-tracker-vipin-dev.up.railway.app
+
 ## Tech Stack
 
 - Backend: Node.js/Express + MySQL
@@ -26,7 +28,7 @@ Full-stack workout tracking application with user authentication, workout manage
 
 1. cd mobile
 2. flutter pub get
-3. Update API base URL in [lib/config/app_config.dart]
+3. API is already configured to use Railway backend
 4. flutter run
 
 ### Database Setup
@@ -282,3 +284,20 @@ The solution involved:
 ## Time Spent
 
 Approximately 44 hours
+
+
+## Deployment
+
+**Backend:** Deployed on Railway at https://workout-tracker-vipin-dev.up.railway.app
+
+**Database:** MySQL hosted on Railway
+
+**Mobile App:** Flutter app configured to connect to Railway backend
+
+## Time Spent
+
+Approximately [X] hours
+
+## Screenshots
+
+[Add 2-3 screenshots of your Flutter app]
