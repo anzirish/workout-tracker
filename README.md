@@ -238,6 +238,7 @@ Authorization: Bearer <token>
 - [x] Streak calculation and tracking
 - [x] Input validation with express-validator
 - [x] Protected routes with JWT middleware
+- [ ] Auth implementation in frontend ()
 
 ## Project Structure
 
