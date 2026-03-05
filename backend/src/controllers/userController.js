@@ -1,25 +1,22 @@
 import { pool } from "../config/db.js";
 import { errorResponse, successReponse } from "../utils/apiResponse.js";
 
-// check existance of a user
-const findUser = async (userId) => {
-  const [rows] = await pool.query("SELECT * FROM users WHERE id = ?", userId);
-  return rows[0] || null;
-};
-
 // GET /api/users/:userId/workout-history
 export const getWorkoutHistory = async (req, res, next) => {
   try {
     const { userId } = req.params;
 
     // pagination
-    const page = parseInt(req.params.page) || 1;
-    const limit = parseInt(req.params.limit) || 10;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
 
-    const user = await findUser(userId);
+    // Check if user exists
+    const [users] = await pool.query("SELECT id FROM users WHERE id = ?", [
+      userId,
+    ]);
 
-    if (!user) {
+    if (users.length === 0) {
       return errorResponse(res, "User not found", 404);
     }
 
@@ -31,14 +28,13 @@ export const getWorkoutHistory = async (req, res, next) => {
           ON uw.workout_id = w.id
           WHERE uw.user_id = ?
           ORDER BY uw.completed_at DESC
-          LIMIT ? OFFSET ?
-          `,
-      [userId, limit, offset],
+          LIMIT ? OFFSET ?`,
+      [userId, limit, offset]
     );
 
     const [[{ total }]] = await pool.query(
       `SELECT COUNT(*) AS total FROM user_workouts WHERE user_id = ?`,
-      [userId],
+      [userId]
     );
 
     return successReponse(res, { history, page, limit, total });
@@ -53,39 +49,39 @@ export const workoutComplete = async (req, res, next) => {
     const { userId, workoutId } = req.params;
     const { completedAt } = req.body;
 
-    const user = await findUser(userId);
+    // Check if user exists
+    const [users] = await pool.query(
+      "SELECT id, current_streak, last_workout_date FROM users WHERE id = ?",
+      [userId]
+    );
 
-    if (!user) {
+    if (users.length === 0) {
       return errorResponse(res, "User not found", 404);
     }
 
-    // check workout exists
-    const [workoutRows] = await pool.query(
-      `
-      SELECT id, title FROM workouts WHERE id = ?
-      `,
-      [workoutId],
+    const user = users[0];
+
+    // Check if workout exists
+    const [workouts] = await pool.query(
+      "SELECT id FROM workouts WHERE id = ?",
+      [workoutId]
     );
-    if (workoutRows.length === 0) {
+
+    if (workouts.length === 0) {
       return errorResponse(res, "Workout not found", 404);
     }
 
-    // parse completeAt date
+    // Parse completed date
     const completedDate = new Date(completedAt);
-    if (isNaN(completedDate.getTime())) {
-      return errorResponse(res, "Provided date is invalid", 400);
-    }
 
-    // insert new record in user_workouts table
+    // Insert new record in user_workouts table
     await pool.query(
-      `
-        INSERT INTO user_workouts (user_id, workout_id, completed_at)
-        VALUES (?, ?, ?)
-        `,
-      [userId, workoutId, completedDate],
+      `INSERT INTO user_workouts (user_id, workout_id, completed_at)
+        VALUES (?, ?, ?)`,
+      [userId, workoutId, completedDate]
     );
 
-    // calculate streak
+    // Calculate streak
     const todayString = new Date().toISOString().split("T")[0];
 
     const yesterday = new Date();
@@ -106,12 +102,10 @@ export const workoutComplete = async (req, res, next) => {
       newStreak = 1;
     }
 
-    // save streak
+    // Save streak
     await pool.query(
-      `
-      UPDATE users SET current_streak = ?,last_workout_date = ? WHERE id = ?
-      `,
-      [newStreak, todayString, userId],
+      `UPDATE users SET current_streak = ?, last_workout_date = ? WHERE id = ?`,
+      [newStreak, todayString, userId]
     );
 
     return successReponse(res, {
@@ -127,11 +121,18 @@ export const workoutComplete = async (req, res, next) => {
 export const getStreak = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const user = await findUser(userId);
 
-    if (!user) {
+    // Check if user exists
+    const [users] = await pool.query(
+      "SELECT id, current_streak, last_workout_date FROM users WHERE id = ?",
+      [userId]
+    );
+
+    if (users.length === 0) {
       return errorResponse(res, "User not found", 404);
     }
+
+    const user = users[0];
 
     return successReponse(res, {
       streak: user.current_streak,
