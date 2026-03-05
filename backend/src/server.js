@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import { workoutRouter } from "./routes/workoutRoutes.js";
 import { userRouter } from "./routes/userRoutes.js";
+import { authRouter } from "./routes/authRoutes.js";
 import { errorHandler, invalidRoute } from "./middlewares/errorHandler.js";
 import { connectDb } from "./config/db.js";
 
@@ -17,6 +18,7 @@ app.use(express.json());
 app.get("/", (req, res) => {
   return res.status(200).json({ message: "Server is running" });
 });
+app.use("/api/auth", authRouter);
 app.use("/api/workouts", workoutRouter);
 app.use("/api/users", userRouter);
 
